@@ -1,7 +1,7 @@
 'use strict';
-var utils = require('utils');
 var ElementKit = require('element-kit');
-var Module = require('module');
+var utils = ElementKit.utils;
+var Module = require('module.js');
 
 /**
  * Modal.
