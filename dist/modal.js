@@ -1,5 +1,5 @@
 /** 
-* modal-module - v1.0.0.
+* modal-module - v1.1.0.
 * git://github.com/mkay581/modal-module.git
 * Copyright 2015 Mark Kennedy. Licensed MIT.
 */
@@ -13224,9 +13224,6 @@ var Modal = Module.extend({
      */
     destroy: function () {
         this.content.kit.classList.remove(this.options.activeClass);
-        if (this.container.contains(this.content)) {
-            this.container.removeChild(this.content);
-        }
         if (!this.container.getElementsByClassName(this.options.activeClass).length) {
             this.container.kit.classList.remove(this.options.containerActiveClass);
         }
