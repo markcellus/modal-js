@@ -23,6 +23,7 @@ describe('Modals', function () {
         modalInstance.setup();
         assert.ok(modalsContainer.contains(modalEl), 'after setup() has been called, modal element has been added as a child node of the modal container');
         modalInstance.destroy();
+        assert.ok(!modalsContainer.contains(modalEl), 'upon destruction, modal element has been removed as a child node of modal container');
     });
 
     it('should be added and removed from DOM correctly on setup and destroy when NO modal container is passed to instantiation', function () {
@@ -36,6 +37,7 @@ describe('Modals', function () {
         modalInstance.setup();
         assert.ok(bodyEl.contains(modalEl), 'after setup() has been called, modal element has been added as a child node of document body');
         modalInstance.destroy();
+        assert.ok(!bodyEl.contains(modalEl), 'upon destruction, modal element has been removed as a child node of document body');
     });
 
     it('should add and remove appropriate classes when showing and hiding a modal', function () {
@@ -102,5 +104,20 @@ describe('Modals', function () {
         assert.ok(!modalsContainer.classList.contains(containerActiveClass), 'modal container\'s active class has been removed since there are modals showing');
         firstModalInstance.destroy();
         secondModalInstance.destroy();
+    });
+
+    it('if modal element passed has a parent, it should be added back on destroy', function () {
+        var fixture = document.getElementById('qunit-fixture');
+        var bodyEl = document.getElementsByTagName('body')[0];
+        var modalElParent = document.createElement('div');
+        var modalEl = document.createElement('div');
+        modalElParent.appendChild(modalEl);
+        var modalInstance = new Modal({
+            el: modalEl
+        });
+        modalInstance.setup();
+        modalInstance.destroy();
+        assert.ok(modalElParent.contains(modalEl), 'modal element has been appended back to its original parent');
+        assert.ok(!bodyEl.contains(modalEl), 'modal element has been removed as a child node of document body');
     });
 });

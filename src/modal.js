@@ -35,6 +35,10 @@ var Modal = Module.extend({
 
         this.container = this.options.containerEl;
         this.content = this.options.el;
+
+        this._origModalElParent = this.content.parentNode || document.createDocumentFragment();
+
+
         Module.prototype.initialize.call(this, this.options);
     },
 
@@ -111,6 +115,9 @@ var Modal = Module.extend({
      */
     destroy: function () {
         this.content.kit.classList.remove(this.options.activeClass);
+        if (this.container.contains(this.content)) {
+            this._origModalElParent.appendChild(this.content);
+        }
         if (!this.container.getElementsByClassName(this.options.activeClass).length) {
             this.container.kit.classList.remove(this.options.containerActiveClass);
         }
