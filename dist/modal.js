@@ -1,5 +1,5 @@
 /** 
-* modal-module - v1.1.1.
+* modal-module - v1.2.0.
 * git://github.com/mkay581/modal-module.git
 * Copyright 2015 Mark Kennedy. Licensed MIT.
 */
@@ -13115,6 +13115,7 @@ module.exports = new ResourceManager();
 var ElementKit = require('element-kit');
 var utils = ElementKit.utils;
 var Module = require('module.js');
+var Promise = require('promise');
 
 /**
  * Modal.
@@ -13172,11 +13173,14 @@ var Modal = Module.extend({
     show: function () {
         this.setup();
         this.content.kit.classList.add(this.options.activeClass);
-        document.addEventListener('click', this._onDocClick.bind(this), true);
         this.container.kit.classList.add(this.options.containerActiveClass);
+        document.addEventListener('click', this._onDocClick.bind(this), true);
         if (this.options.onShow) {
             this.options.onShow();
         }
+        return new Promise(function (resolve) {
+            this.content.kit.waitForTransition(resolve);
+        }.bind(this));
     },
 
     /**
@@ -13195,6 +13199,9 @@ var Modal = Module.extend({
         if (this.options.onHide) {
             this.options.onHide();
         }
+        return new Promise(function (resolve) {
+            this.content.kit.waitForTransition(resolve);
+        }.bind(this));
     },
 
     /**
@@ -13241,4 +13248,4 @@ var Modal = Module.extend({
 });
 
 module.exports = Modal;
-},{"element-kit":4,"module.js":10}]},{},[23]);
+},{"element-kit":4,"module.js":10,"promise":11}]},{},[23]);
