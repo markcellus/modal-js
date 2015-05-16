@@ -39,7 +39,6 @@ var Modal = Module.extend({
 
         this._origModalElParent = this.content.parentNode || document.createDocumentFragment();
 
-
         Module.prototype.initialize.call(this, this.options);
     },
 
@@ -65,8 +64,10 @@ var Modal = Module.extend({
         if (this.options.onShow) {
             this.options.onShow();
         }
-        return new Promise(function (resolve) {
-            this.content.kit.waitForTransition(resolve);
+        return Module.prototype.show.call(this).then(function () {
+            return new Promise(function (resolve) {
+                this.content.kit.waitForTransition(resolve);
+            }.bind(this));
         }.bind(this));
     },
 
@@ -78,16 +79,19 @@ var Modal = Module.extend({
         this.content.kit.classList.remove(this.options.activeClass);
         document.removeEventListener('click', this._onDocClick.bind(this), true);
 
-        // do not remove container's active class if other active modals exist
-        if (!this.container.getElementsByClassName(this.options.activeClass).length) {
-            this.container.kit.classList.remove(this.options.containerActiveClass);
-        }
-
         if (this.options.onHide) {
             this.options.onHide();
         }
-        return new Promise(function (resolve) {
-            this.content.kit.waitForTransition(resolve);
+        return Module.prototype.hide.call(this).then(function () {
+            return new Promise(function (resolve) {
+                this.content.kit.waitForTransition(function () {
+                    // do not remove container's active class if other active modals exist
+                    if (!this.container.getElementsByClassName(this.options.activeClass).length) {
+                        this.container.kit.classList.remove(this.options.containerActiveClass);
+                    }
+                    resolve();
+                }.bind(this));
+            }.bind(this));
         }.bind(this));
     },
 
@@ -97,7 +101,7 @@ var Modal = Module.extend({
      * @memberOf Modal
      */
     isActive: function () {
-        return this.content.classList.contains(this.options.activeClass);
+        return this.active;
     },
 
     /**

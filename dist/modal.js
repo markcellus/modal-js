@@ -1,5 +1,5 @@
 /** 
-* modal-module - v1.3.0.
+* modal-module - v1.3.1.
 * git://github.com/mkay581/modal-module.git
 * Copyright 2015 Mark Kennedy. Licensed MIT.
 */
@@ -10647,6 +10647,7 @@ Module.prototype = {
         this._handleElementInitialState();
 
         this.subModules = {};
+        this.active = false;
     },
 
     /**
@@ -10797,9 +10798,6 @@ Module.prototype = {
      */
     show: function () {
         var el = this.options.el;
-        if (!this.loaded) {
-            console.warn('Module show() method was called before its load() method.');
-        }
         if (el) {
             el.classList.add(this.options.activeClass);
         }
@@ -10813,9 +10811,6 @@ Module.prototype = {
      */
     hide: function () {
         var el = this.options.el;
-        if (!this.loaded) {
-            console.warn('Module hide() method was called before its load() method.');
-        }
         if (el) {
             el.classList.remove(this.options.activeClass);
         }
@@ -13319,7 +13314,6 @@ var Modal = Module.extend({
 
         this._origModalElParent = this.content.parentNode || document.createDocumentFragment();
 
-
         Module.prototype.initialize.call(this, this.options);
     },
 
@@ -13345,8 +13339,10 @@ var Modal = Module.extend({
         if (this.options.onShow) {
             this.options.onShow();
         }
-        return new Promise(function (resolve) {
-            this.content.kit.waitForTransition(resolve);
+        return Module.prototype.show.call(this).then(function () {
+            return new Promise(function (resolve) {
+                this.content.kit.waitForTransition(resolve);
+            }.bind(this));
         }.bind(this));
     },
 
@@ -13358,16 +13354,19 @@ var Modal = Module.extend({
         this.content.kit.classList.remove(this.options.activeClass);
         document.removeEventListener('click', this._onDocClick.bind(this), true);
 
-        // do not remove container's active class if other active modals exist
-        if (!this.container.getElementsByClassName(this.options.activeClass).length) {
-            this.container.kit.classList.remove(this.options.containerActiveClass);
-        }
-
         if (this.options.onHide) {
             this.options.onHide();
         }
-        return new Promise(function (resolve) {
-            this.content.kit.waitForTransition(resolve);
+        return Module.prototype.hide.call(this).then(function () {
+            return new Promise(function (resolve) {
+                this.content.kit.waitForTransition(function () {
+                    // do not remove container's active class if other active modals exist
+                    if (!this.container.getElementsByClassName(this.options.activeClass).length) {
+                        this.container.kit.classList.remove(this.options.containerActiveClass);
+                    }
+                    resolve();
+                }.bind(this));
+            }.bind(this));
         }.bind(this));
     },
 
@@ -13377,7 +13376,7 @@ var Modal = Module.extend({
      * @memberOf Modal
      */
     isActive: function () {
-        return this.content.classList.contains(this.options.activeClass);
+        return this.active;
     },
 
     /**
