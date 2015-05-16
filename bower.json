@@ -22,7 +22,7 @@
     "test",
     "tests"
   ],
-  "main": "src/carousel.js",
+  "main": "src/modal.js",
   "dependencies": {
     "resource-manager-js": "*",
     "promise": "~0.2.2",
