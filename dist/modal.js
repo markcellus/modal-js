@@ -1,5 +1,5 @@
 /** 
-* modal-module - v1.2.0.
+* modal-module - v1.3.0.
 * git://github.com/mkay581/modal-module.git
 * Copyright 2015 Mark Kennedy. Licensed MIT.
 */
@@ -10317,6 +10317,254 @@ return jQuery;
 }));
 
 },{}],10:[function(require,module,exports){
+var Promise = require('promise');
+var $ = require('jquery');
+
+/**
+ * Custom request function (work in progress).
+ * @returns {*}
+ */
+var request = function (url, options) {
+    var client = new XMLHttpRequest();
+
+    options = options || {};
+    options.method = options.method || 'GET';
+    options.headers = options.headers || {};
+    options.async = typeof options.async === 'undefined' ? true : options.async;
+
+
+    return new Promise(
+        function (resolve, reject) {
+            // open connection
+            client.open(options.method, url);
+
+            // deal with headers
+            for (var i in options.headers) {
+                if (options.headers.hasOwnProperty(i)) {
+                    client.setRequestHeader(i, options.headers[i]);
+                }
+            }
+            // listener
+            client.onreadystatechange = function() {
+                if (this.readyState == 4 && this.status == 200) {
+                    resolve.call(this, this.responseText);
+                } else if (this.readyState == 4) {
+                    reject.call(this, this.status, this.statusText);
+                }
+            };
+            // send off
+            client.send(options.data);
+        });
+};
+
+'use strict';
+/**
+ The Resource Manager.
+ @class ResourceManager
+ @description Represents a manager that loads any CSS and Javascript Resources on the fly.
+ */
+var ResourceManager = function () {
+    this.initialize();
+};
+
+ResourceManager.prototype = {
+
+    /**
+     * Upon initialization.
+     * @memberOf ResourceManager
+     */
+    initialize: function () {
+        this._head = document.getElementsByTagName('head')[0];
+        this._cssPaths = {};
+        this._scriptPaths = {};
+        this._dataPromises = {};
+    },
+
+    /**
+     * Loads a javascript file.
+     * @param {string|Array} paths - The path to the view's js file
+     * @memberOf ResourceManager
+     * @return {Promise}
+     */
+    loadScript: function (paths) {
+        var script;
+        if (!this._loadScriptPromise) {
+            this._loadScriptPromise = new Promise(function (resolve) {
+                paths = this._ensurePathArray(paths);
+                paths.forEach(function (path) {
+                    if (!this._scriptPaths[path]) {
+                        this._scriptPaths[path] = path;
+                        script = this.createScriptElement();
+                        script.setAttribute('type','text/javascript');
+                        script.src = path;
+                        script.addEventListener('load', resolve);
+                        this._head.appendChild(script);
+                    }
+                }.bind(this));
+            }.bind(this));
+        } else {
+            this._loadScriptPromise = Promise.resolve();
+        }
+        return this._loadScriptPromise;
+    },
+
+    /**
+     * Removes a script that has the specified path from the head of the document.
+     * @param {string|Array} paths - The paths of the scripts to unload
+     * @memberOf ResourceManager
+     */
+    unloadScript: function (paths) {
+        var file;
+        return new Promise(function (resolve) {
+            paths = this._ensurePathArray(paths);
+            paths.forEach(function (path) {
+                file = this._head.querySelectorAll('script[src="' + path + '"]')[0];
+                if (file) {
+                    this._head.removeChild(file);
+                    this._scriptPaths[path] = null;
+                }
+            }.bind(this));
+            resolve();
+        }.bind(this));
+    },
+
+    /**
+     * Creates a new script element.
+     * @returns {HTMLElement}
+     */
+    createScriptElement: function () {
+        return document.createElement('script');
+    },
+
+    /**
+     * Makes a request to get data and caches it.
+     * @param {string} url - The url to fetch data from
+     * @param [options] - ajax options
+     * @returns {*}
+     */
+    fetchData: function (url, options) {
+        var objId = options ? JSON.stringify(options) : '',
+            cacheId = url + objId;
+
+        options = options || {};
+
+        if (!url) {
+            return Promise.resolve();
+        } else if (this._dataPromises[cacheId]) {
+            return this._dataPromises[cacheId];
+        } else {
+            this._dataPromises[cacheId] = new Promise(function (resolve, reject) {
+                $.ajax(url, options).done(resolve).fail(reject);
+            }.bind(this));
+            return this._dataPromises[cacheId].catch(function () {
+                    // if failure, remove cache so that subsequent
+                    // requests will trigger new ajax call
+                    this._dataPromises[cacheId] = null;
+                    reject(new Error('ResourceManager Failure: request for data at ' + url + ' failed.'));
+            }.bind(this));
+        }
+    },
+
+    /**
+     * Loads css files.
+     * @param {Array|String} paths - An array of css paths files to load
+     * @memberOf ResourceManager
+     * @return {Promise}
+     */
+    loadCss: function (paths) {
+        return new Promise(function (resolve) {
+            paths = this._ensurePathArray(paths);
+            paths.forEach(function (path) {
+                // TODO: figure out a way to find out when css is guaranteed to be loaded,
+                // and make this return a truely asynchronous promise
+                if (!this._cssPaths[path]) {
+                    var el = document.createElement('link');
+                    el.setAttribute('rel','stylesheet');
+                    el.setAttribute('href', path);
+                    this._head.appendChild(el);
+                    this._cssPaths[path] = el;
+                }
+            }.bind(this));
+            resolve();
+        }.bind(this));
+    },
+
+    /**
+     * Unloads css paths.
+     * @param {string|Array} paths - The css paths to unload
+     * @memberOf ResourceManager
+     * @return {Promise}
+     */
+    unloadCss: function (paths) {
+        var el;
+        return new Promise(function (resolve) {
+            paths = this._ensurePathArray(paths);
+            paths.forEach(function (path) {
+                el = this._cssPaths[path];
+                if (el) {
+                    this._head.removeChild(el);
+                    this._cssPaths[path] = null;
+                }
+            }.bind(this));
+            resolve();
+        }.bind(this));
+    },
+
+    /**
+     * Parses a template into a DOM element, then returns element back to you.
+     * @param {string} path - The path to the template
+     * @param {HTMLElement} [el] - The element to attach template to
+     * @returns {Promise} Returns a promise that resolves with contents of template file
+     */
+    loadTemplate: function (path, el) {
+        return new Promise(function (resolve) {
+            if (path) {
+                return request(path).then(function (contents) {
+                    if (el) {
+                        el.innerHTML = contents;
+                        contents = el;
+                    }
+                    resolve(contents);
+                });
+            } else {
+                // no path was supplied
+                resolve();
+            }
+        });
+    },
+
+    /**
+     * Makes sure that a path is converted to an array.
+     * @param paths
+     * @returns {*}
+     * @private
+     */
+    _ensurePathArray: function (paths) {
+        if (!paths) {
+            paths = [];
+        } else if (typeof paths === 'string') {
+            paths = [paths];
+        }
+        return paths;
+    },
+
+    /**
+     * Removes all cached resources.
+     * @memberOf ResourceManager
+     */
+    flush: function () {
+        this.unloadCss(Object.getOwnPropertyNames(this._cssPaths));
+        this._cssPaths = {};
+        this.unloadScript(Object.getOwnPropertyNames(this._scriptPaths));
+        this._scriptPaths = {};
+        this._dataPromises = {};
+        this._loadScriptPromise = null;
+    }
+
+};
+
+module.exports = new ResourceManager();
+},{"jquery":9,"promise":12}],11:[function(require,module,exports){
 'use strict';
 
 var Promise = require('promise');
@@ -10379,91 +10627,183 @@ Module.prototype = {
 
     /**
      * Initialization.
+     * @param {Object} [options] - An object of options
+     * @param {HTMLElement} [options.el] - The module element
+     * @param {string} [options.loadedClass] - The class that will be applied to the module element when it is loaded
+     * @param {string} [options.activeClass] - The class that will be applied to the module element when it is shown
+     * @param {string} [options.disabledClass] - The class that will be applied to the module element when disabled
+     * @param {string} [options.errorClass] - The class that will be applied to the module element when it has a load error
      */
     initialize: function (options) {
-        this.options = options;
-        this.options = _.extend({}, options);
+
+        this.options = _.extend({}, {
+            el: null,
+            loadedClass: 'module-loaded',
+            activeClass: 'module-active',
+            disabledClass: 'module-disabled',
+            errorClass: 'module-error'
+        }, options);
+
+        this._handleElementInitialState();
+
         this.subModules = {};
     },
 
     /**
-     * A load function that should be overridden by subclass for custom implementations.
+     * A function that fires when the module's load() method is called
+     * which can be overridden by subclass custom implementations.
      * @abstract
-     * @return {*} May returns a promise when done
+     * @return {*} May return a promise when done
      * @param options
      */
     onLoad: function (options) {
-        // support legacy _handleLoad method
-        if (this._handleLoad) {
-            return this._handleLoad(options);
-        } else {
-            return Promise.resolve();
-        }
+        return Promise.resolve();
     },
 
     /**
-     * A show function that should be overridden by subclass for custom implementations.
+     * A function that fires when the module's show() method is called
+     * which can be overridden by subclass custom implementations.
      * @abstract
-     * @return {*} May returns a promise when done
+     * @return {*} May return a promise when done
      */
     onShow: function () {
         return Promise.resolve();
     },
 
     /**
-     * A hide function that should be overridden by subclass for custom implementations.
+     * A function that fires when the module's hide() method is called
+     * which can be overridden by subclass custom implementations.
      * @abstract
-     * @return {*} May returns a promise when done
+     * @return {*} May return a promise when done
      */
     onHide: function () {
         return Promise.resolve();
     },
 
     /**
+     * A function that fires when the module's enable() method is called
+     * which can be overridden by subclass custom implementations.
+     * @abstract
+     * @returns {*|Promise} Optionally return a promise when done
+     */
+    onEnable: function () {
+        return Promise.resolve();
+    },
+
+    /**
+     * A function that fires when the module's disable() method is called
+     * which can be overridden by subclass custom implementations.
+     * @abstract
+     * @returns {*|Promise} Optionally return a promise when done
+     */
+    onDisable: function () {
+        return Promise.resolve();
+    },
+
+    /**
+     * A function that fires when the error() method is called
+     * which can be overridden by subclass custom implementations.
+     * @abstract
+     * @returns {*|Promise} Optionally return a promise when done
+     */
+    onError: function () {
+        return Promise.resolve();
+    },
+
+    /**
      * Loads.
-     * @param {Object} options - Options
+     * @param {Object} [options] - Options
+     * @param {HTMLElement} [options.el] - The modules element (used only if module element wasnt passed in initialize)
      * @return {Promise}
      */
     load: function (options) {
         var views = _.values(this.subModules);
+
+        // add element to options
+        if (options) {
+            this.options.el = this.options.el || options.el;
+        }
+
         // load all subModules
         if (!this.loaded) {
             return Promise.all(_.invoke(views, 'load')).then(function () {
-                return this._ensurePromise(this.onLoad(options)).then(function () {
-                    this.loaded = true;
-                }.bind(this));
+                return this._ensurePromise(this.onLoad(options))
+                    .then(function () {
+                        this.loaded = true;
+                        if (this.options.el) {
+                            this.options.el.classList.add(this.options.loadedClass);
+                        }
+                    }.bind(this))
+                    .catch(function (e) {
+                        this.error(e);
+                    }.bind(this));
             }.bind(this));
         } else {
             return Promise.resolve();
         }
     },
-    // TODO: merge the following function with one above
 
-    //load: function () {
-    //    var el = this.options.el;
-    //    return BaseModule.prototype.load.apply(this, arguments)
-    //        .then(function () {
-    //            if (el) {
-    //                el.classList.add('module-loaded');
-    //            }
-    //        }.bind(this))
-    //        .catch(function (e) {
-    //            if (el) {
-    //                el.classList.add('module-error');
-    //            }
-    //            console.log('MODULE ERROR!');
-    //            console.log(e.stack);
-    //        }.bind(this));
-    //},
+    /**
+     * Triggers a load error on the module.
+     * @param {Error} [e] - The error to trigger
+     * @return {Promise} Returns a promise when erroring operation is complete
+     */
+    error: function (e) {
+        var el = this.options.el;
+
+        e = e || new Error();
+
+        if (el) {
+            el.classList.add(this.options.errorClass);
+        }
+        this.error = true;
+        console.log('MODULE ERROR!');
+        if (e.stack) {
+            console.log(e.stack);
+        }
+        this.loaded = false;
+        return this._ensurePromise(this.onError(e));
+    },
+
+    /**
+     * Enables the module.
+     * @return {Promise}
+     */
+    enable: function () {
+        var el = this.options.el;
+        if (el) {
+            el.classList.remove(this.options.disabledClass);
+        }
+        this.disabled = false;
+        return this._ensurePromise(this.onEnable());
+    },
+
+    /**
+     * Disables the module.
+     * @return {Promise}
+     */
+    disable: function () {
+        var el = this.options.el;
+        if (el) {
+            el.classList.add(this.options.disabledClass);
+        }
+        this.disabled = true;
+        return this._ensurePromise(this.onDisable());
+    },
 
     /**
      * Shows the page.
      * @return {Promise}
      */
     show: function () {
+        var el = this.options.el;
         if (!this.loaded) {
-            console.warn('Page show() method was called before its load() method.');
+            console.warn('Module show() method was called before its load() method.');
         }
+        if (el) {
+            el.classList.add(this.options.activeClass);
+        }
+        this.active = true;
         return this._ensurePromise(this.onShow());
     },
 
@@ -10472,10 +10812,61 @@ Module.prototype = {
      * @return {Promise}
      */
     hide: function () {
+        var el = this.options.el;
         if (!this.loaded) {
-            console.warn('Page hide() method was called before its load() method.');
+            console.warn('Module hide() method was called before its load() method.');
         }
+        if (el) {
+            el.classList.remove(this.options.activeClass);
+        }
+        this.active = false;
         return this._ensurePromise(this.onHide());
+    },
+
+    /**
+     * Sets up element internally by evaluating its initial state.
+     * @private
+     */
+    _handleElementInitialState: function () {
+        var el = this.options.el;
+        if (!el) {
+            return;
+        }
+        if (el.classList.contains(this.options.disabledClass)) {
+            this._origDisabled = true;
+            this.disable();
+        }
+
+        if (el.classList.contains(this.options.errorClass)) {
+            this._origError = true;
+            this.error(new Error());
+        }
+    },
+
+    /**
+     * Restores the elements classes back to the way they were before instantiation.
+     * @private
+     */
+    _resetElementInitialState: function () {
+        var options = this.options,
+            el = options.el,
+            disabledClass = options.disabledClass,
+            errorClass = options.errorClass;
+
+        if (!el) {
+            return;
+        }
+        if (this._origDisabled) {
+            el.classList.add(disabledClass);
+        } else {
+            el.classList.remove(disabledClass);
+        }
+
+        if (!this._origError) {
+            el.classList.remove(errorClass);
+        } else {
+            el.classList.add(errorClass);
+        }
     },
 
     /**
@@ -10491,25 +10882,13 @@ Module.prototype = {
     },
 
     /**
-     * Gets the data for the template to show on the page.
+     * Makes a request to get the data for the module.
+     * @param {string} url - The url to fetch data from
+     * @param [options] - ajax options
      * @returns {*}
      */
-    getData: function (dataUrl) {
-        return new Promise(function (resolve, reject) {
-            if (dataUrl) {
-                var defaultOptions = {
-                    url: dataUrl,
-                    success: function (data) {
-                        data = this.serializeData(data);
-                        resolve(data);
-                    }.bind(this),
-                    error: reject
-                };
-                $.ajax(defaultOptions);
-            } else {
-                resolve();
-            }
-        }.bind(this));
+    fetchData: function (url, options) {
+        return ResourceManager.fetchData(url, options);
     },
 
     /**
@@ -10544,24 +10923,28 @@ Module.prototype = {
      */
     destroy: function () {
         var subModules = this.subModules;
+
         for (var key in subModules) {
             if (subModules.hasOwnProperty(key) && subModules[key]) {
                 subModules[key].destroy();
             }
         }
         this.subModules = {};
+        this.active = false;
+
+        this._resetElementInitialState();
     }
 
 };
 
 
 module.exports = Module;
-},{"jquery":9,"promise":11,"resource-manager-js":21,"underscore":22}],11:[function(require,module,exports){
+},{"jquery":9,"promise":12,"resource-manager-js":10,"underscore":22}],12:[function(require,module,exports){
 'use strict';
 
 module.exports = require('./lib')
 
-},{"./lib":16}],12:[function(require,module,exports){
+},{"./lib":17}],13:[function(require,module,exports){
 'use strict';
 
 var asap = require('asap/raw')
@@ -10733,7 +11116,7 @@ function doResolve(fn, promise) {
     promise._67(LAST_ERROR)
   }
 }
-},{"asap/raw":20}],13:[function(require,module,exports){
+},{"asap/raw":21}],14:[function(require,module,exports){
 'use strict';
 
 var Promise = require('./core.js')
@@ -10747,7 +11130,7 @@ Promise.prototype.done = function (onFulfilled, onRejected) {
     }, 0)
   })
 }
-},{"./core.js":12}],14:[function(require,module,exports){
+},{"./core.js":13}],15:[function(require,module,exports){
 'use strict';
 
 //This file contains the ES6 extensions to the core Promises/A+ API
@@ -10853,7 +11236,7 @@ Promise.prototype['catch'] = function (onRejected) {
   return this.then(null, onRejected);
 }
 
-},{"./core.js":12,"asap/raw":20}],15:[function(require,module,exports){
+},{"./core.js":13,"asap/raw":21}],16:[function(require,module,exports){
 'use strict';
 
 var Promise = require('./core.js')
@@ -10871,7 +11254,7 @@ Promise.prototype['finally'] = function (f) {
   })
 }
 
-},{"./core.js":12}],16:[function(require,module,exports){
+},{"./core.js":13}],17:[function(require,module,exports){
 'use strict';
 
 module.exports = require('./core.js')
@@ -10880,7 +11263,7 @@ require('./finally.js')
 require('./es6-extensions.js')
 require('./node-extensions.js')
 
-},{"./core.js":12,"./done.js":13,"./es6-extensions.js":14,"./finally.js":15,"./node-extensions.js":17}],17:[function(require,module,exports){
+},{"./core.js":13,"./done.js":14,"./es6-extensions.js":15,"./finally.js":16,"./node-extensions.js":18}],18:[function(require,module,exports){
 'use strict';
 
 //This file contains then/promise specific extensions that are only useful for node.js interop
@@ -10945,7 +11328,7 @@ Promise.prototype.nodeify = function (callback, ctx) {
   })
 }
 
-},{"./core.js":12,"asap":18}],18:[function(require,module,exports){
+},{"./core.js":13,"asap":19}],19:[function(require,module,exports){
 "use strict";
 
 // rawAsap provides everything we need except exception management.
@@ -11013,7 +11396,7 @@ RawTask.prototype.call = function () {
     }
 };
 
-},{"./raw":19}],19:[function(require,module,exports){
+},{"./raw":20}],20:[function(require,module,exports){
 (function (global){
 "use strict";
 
@@ -11238,7 +11621,7 @@ rawAsap.makeRequestCallFromTimer = makeRequestCallFromTimer;
 
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],20:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 (function (process){
 "use strict";
 
@@ -11344,223 +11727,7 @@ function requestFlush() {
 
 
 }).call(this,require('_process'))
-},{"_process":3,"domain":1}],21:[function(require,module,exports){
-var Promise = require('promise');
-
-/**
- * Custom request function (work in progress).
- * @returns {*}
- */
-var request = function (url, options) {
-    var client = new XMLHttpRequest();
-
-    options = options || {};
-    options.method = options.method || 'GET';
-    options.headers = options.headers || {};
-    options.async = typeof options.async === 'undefined' ? true : options.async;
-
-
-    return new Promise(
-        function (resolve, reject) {
-            // open connection
-            client.open(options.method, url);
-
-            // deal with headers
-            for (var i in options.headers) {
-                if (options.headers.hasOwnProperty(i)) {
-                    client.setRequestHeader(i, options.headers[i]);
-                }
-            }
-            // listener
-            client.onreadystatechange = function() {
-                if (this.readyState == 4 && this.status == 200) {
-                    resolve.call(this, this.responseText);
-                } else if (this.readyState == 4) {
-                    reject.call(this, this.status, this.statusText);
-                }
-            };
-            // send off
-            client.send(options.data);
-        });
-};
-
-'use strict';
-/**
- The Resource Manager.
- @class ResourceManager
- @description Represents a manager that loads any CSS and Javascript Resources on the fly.
- */
-var ResourceManager = function () {
-    this.initialize();
-};
-
-ResourceManager.prototype = {
-
-    /**
-     * Upon initialization.
-     * @memberOf ResourceManager
-     */
-    initialize: function () {
-        this._head = document.getElementsByTagName('head')[0];
-        this._cssPaths = {};
-        this._scriptPaths = {};
-    },
-
-    /**
-     * Loads a javascript file.
-     * @param {string|Array} paths - The path to the view's js file
-     * @memberOf ResourceManager
-     * @return {Promise}
-     */
-    loadScript: function (paths) {
-        var script;
-        if (!this._loadScriptPromise) {
-            this._loadScriptPromise = new Promise(function (resolve) {
-                paths = this._ensurePathArray(paths);
-                paths.forEach(function (path) {
-                    if (!this._scriptPaths[path]) {
-                        this._scriptPaths[path] = path;
-                        script = this.createScriptElement();
-                        script.setAttribute('type','text/javascript');
-                        script.src = path;
-                        script.addEventListener('load', resolve);
-                        this._head.appendChild(script);
-                    }
-                }.bind(this));
-            }.bind(this));
-        } else {
-            this._loadScriptPromise = Promise.resolve();
-        }
-        return this._loadScriptPromise;
-    },
-
-    /**
-     * Removes a script that has the specified path from the head of the document.
-     * @param {string|Array} paths - The paths of the scripts to unload
-     * @memberOf ResourceManager
-     */
-    unloadScript: function (paths) {
-        var file;
-        return new Promise(function (resolve) {
-            paths = this._ensurePathArray(paths);
-            paths.forEach(function (path) {
-                file = this._head.querySelectorAll('script[src="' + path + '"]')[0];
-                if (file) {
-                    this._head.removeChild(file);
-                    this._scriptPaths[path] = null;
-                }
-            }.bind(this));
-            resolve();
-        }.bind(this));
-    },
-
-    /**
-     * Creates a new script element.
-     * @returns {HTMLElement}
-     */
-    createScriptElement: function () {
-        return document.createElement('script');
-    },
-
-    /**
-     * Loads css files.
-     * @param {Array|String} paths - An array of css paths files to load
-     * @memberOf ResourceManager
-     * @return {Promise}
-     */
-    loadCss: function (paths) {
-        return new Promise(function (resolve) {
-            paths = this._ensurePathArray(paths);
-            paths.forEach(function (path) {
-                // TODO: figure out a way to find out when css is guaranteed to be loaded,
-                // and make this return a truely asynchronous promise
-                if (!this._cssPaths[path]) {
-                    var el = document.createElement('link');
-                    el.setAttribute('rel','stylesheet');
-                    el.setAttribute('href', path);
-                    this._head.appendChild(el);
-                    this._cssPaths[path] = el;
-                }
-            }.bind(this));
-            resolve();
-        }.bind(this));
-    },
-
-    /**
-     * Unloads css paths.
-     * @param {string|Array} paths - The css paths to unload
-     * @memberOf ResourceManager
-     * @return {Promise}
-     */
-    unloadCss: function (paths) {
-        var el;
-        return new Promise(function (resolve) {
-            paths = this._ensurePathArray(paths);
-            paths.forEach(function (path) {
-                el = this._cssPaths[path];
-                if (el) {
-                    this._head.removeChild(el);
-                    this._cssPaths[path] = null;
-                }
-            }.bind(this));
-            resolve();
-        }.bind(this));
-    },
-
-    /**
-     * Parses a template into a DOM element, then returns element back to you.
-     * @param {string} path - The path to the template
-     * @param {HTMLElement} [el] - The element to attach template to
-     * @returns {Promise} Returns a promise that resolves with contents of template file
-     */
-    loadTemplate: function (path, el) {
-        return new Promise(function (resolve) {
-            if (path) {
-                return request(path).then(function (contents) {
-                    if (el) {
-                        el.innerHTML = contents;
-                        contents = el;
-                    }
-                    resolve(contents);
-                });
-            } else {
-                // no path was supplied
-                resolve();
-            }
-        });
-    },
-
-    /**
-     * Makes sure that a path is converted to an array.
-     * @param paths
-     * @returns {*}
-     * @private
-     */
-    _ensurePathArray: function (paths) {
-        if (!paths) {
-            paths = [];
-        } else if (typeof paths === 'string') {
-            paths = [paths];
-        }
-        return paths;
-    },
-
-    /**
-     * Removes all cached resources.
-     * @memberOf ResourceManager
-     */
-    flush: function () {
-        this.unloadCss(Object.getOwnPropertyNames(this._cssPaths));
-        this._cssPaths = {};
-        this.unloadScript(Object.getOwnPropertyNames(this._scriptPaths));
-        this._scriptPaths = {};
-        this._loadScriptPromise = null;
-    }
-
-};
-
-module.exports = new ResourceManager();
-},{"promise":11}],22:[function(require,module,exports){
+},{"_process":3,"domain":1}],22:[function(require,module,exports){
 //     Underscore.js 1.8.3
 //     http://underscorejs.org
 //     (c) 2009-2015 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
@@ -13248,4 +13415,4 @@ var Modal = Module.extend({
 });
 
 module.exports = Modal;
-},{"element-kit":4,"module.js":10,"promise":11}]},{},[23]);
+},{"element-kit":4,"module.js":11,"promise":12}]},{},[23]);
