@@ -1,6 +1,9 @@
 var TestUtils = require('test-utils');
 var Modal = require('../src/modal');
 var assert = require('assert');
+var Module = require('module.js');
+var sinon = require('sinon');
+var Promise = require('promise');
 
 var modalsContainer;
 
@@ -10,6 +13,16 @@ describe('Modals', function () {
         var fixture = document.getElementById('qunit-fixture');
         modalsContainer = document.createElement('div');
         modalsContainer.className = 'modal-container';
+    });
+
+    beforeEach(function () {
+        sinon.stub(Module.prototype, 'show').returns(Promise.resolve());
+        sinon.stub(Module.prototype, 'hide').returns(Promise.resolve());
+    });
+
+    afterEach(function () {
+        Module.prototype.show.restore();
+        Module.prototype.hide.restore();
     });
 
     it('should be added and removed from DOM correctly on setup and destroy when a modal container is passed to instantiation', function () {
@@ -54,16 +67,38 @@ describe('Modals', function () {
         modalInstance.setup();
         modalInstance.show();
         assert.ok(modalEl.classList.contains(defaultActiveClass), 'default active class was added to modal element after calling show()');
-        assert.ok(modalsContainer.classList.contains(defaultContainerActiveClass), 'default active class was added to modal container calling show()');
         modalInstance.hide();
         assert.ok(!modalEl.classList.contains(defaultActiveClass), 'default active class was removed from modal element when hide() is called');
-        assert.ok(!modalsContainer.classList.contains(defaultContainerActiveClass), 'default active class was removed from modal container');
         modalInstance.show();
         assert.ok(modalEl.classList.contains(defaultActiveClass), 'default active class was added back to modal element when show() is called again');
-        assert.ok(modalsContainer.classList.contains(defaultContainerActiveClass), 'default active class was added to modal container');
         modalInstance.destroy();
         assert.ok(!modalEl.classList.contains(defaultActiveClass), 'default active class was removed from modal element when destroy() is called');
-        assert.ok(!modalsContainer.classList.contains(defaultContainerActiveClass), 'default active class was removed from modal container');
+    });
+
+    it('should add and remove appropriate classes to modal container when showing and hiding a modal', function () {
+        var fixture = document.getElementById('qunit-fixture');
+        var defaultActiveClass = 'modal-active';
+        var defaultContainerActiveClass = 'modal-container-active';
+        var modalEl = document.createElement('div');
+        var modalInstance = new Modal({
+            el: modalEl,
+            containerEl: modalsContainer,
+            activeClass: defaultActiveClass,
+            containerActiveClass: defaultContainerActiveClass
+        });
+        modalInstance.setup();
+        return modalInstance.show().then(function () {
+            assert.ok(modalsContainer.classList.contains(defaultContainerActiveClass), 'default active class was added to modal container calling show()');
+            return modalInstance.hide().then(function () {
+                assert.ok(!modalsContainer.classList.contains(defaultContainerActiveClass), 'default active class was removed from modal container');
+                return modalInstance.show().then(function () {
+                    assert.ok(modalsContainer.classList.contains(defaultContainerActiveClass), 'default active class was added to modal container');
+                    modalInstance.destroy();
+                    assert.ok(!modalsContainer.classList.contains(defaultContainerActiveClass), 'default active class was removed from modal container');
+                });
+
+            });
+        });
     });
 
     it('custom classes should be added and removed appropriately when showing and hiding multiple modals with custom active classes', function () {
@@ -89,19 +124,15 @@ describe('Modals', function () {
         firstModalInstance.show();
         assert.ok(firstModalEl.classList.contains(activeClass), 'after calling show() on first modal, active class was added to it');
         assert.ok(!secondModalEl.classList.contains(activeClass), 'second modal does NOT yet have an active class');
-        assert.ok(modalsContainer.classList.contains(containerActiveClass), 'active class was added to modal container');
         secondModalInstance.show();
         assert.ok(secondModalEl.classList.contains(activeClass), 'after calling show() on second modal, active class was added to it');
         assert.ok(firstModalEl.classList.contains(activeClass), 'first modal still now has its active class');
-        assert.ok(modalsContainer.classList.contains(containerActiveClass), 'modal container still has active class');
         firstModalInstance.hide();
         assert.ok(!firstModalEl.classList.contains(activeClass), 'hiding first modal removes its active class');
         assert.ok(secondModalEl.classList.contains(activeClass), 'second modal still has its active class');
-        assert.ok(modalsContainer.classList.contains(containerActiveClass), 'modal container still has active class because second modal hasnt been hidden yet');
         secondModalInstance.hide();
         assert.ok(!secondModalEl.classList.contains(activeClass), 'hiding second modal removes its active class');
         assert.ok(!firstModalEl.classList.contains(activeClass), 'first modal still does NOT have an active class');
-        assert.ok(!modalsContainer.classList.contains(containerActiveClass), 'modal container\'s active class has been removed since there are modals showing');
         firstModalInstance.destroy();
         secondModalInstance.destroy();
     });
@@ -119,5 +150,47 @@ describe('Modals', function () {
         modalInstance.destroy();
         assert.ok(modalElParent.contains(modalEl), 'modal element has been appended back to its original parent');
         assert.ok(!bodyEl.contains(modalEl), 'modal element has been removed as a child node of document body');
+    });
+
+    it('initializing should call Module.prototype.initialize() with correct options', function () {
+        var fixture = document.getElementById('qunit-fixture');
+        var modalEl = document.createElement('div');
+        sinon.stub(Module.prototype, 'initialize');
+        var activeClass = 'my-custom-active';
+        var modalInstance = new Modal({
+            el: modalEl,
+            containerEl: modalsContainer,
+            activeClass: activeClass
+        });
+        assert.equal(Module.prototype.initialize.args[0][0].activeClass, activeClass, 'activeClass was passed to Module.prototype initialize call');
+        modalInstance.destroy();
+        Module.prototype.initialize.restore();
+    });
+
+
+    it('show() should call Module.prototype.show()', function () {
+        var fixture = document.getElementById('qunit-fixture');
+        var modalEl = document.createElement('div');
+        var modalInstance = new Modal({
+            el: modalEl,
+            containerEl: modalsContainer
+        });
+        modalInstance.setup();
+        modalInstance.show();
+        assert.equal(Module.prototype.show.callCount, 1, 'Module.prototype.show() was called when show() was called');
+        modalInstance.destroy();
+    });
+
+    it('show() and hide() should call Module.prototype methods', function () {
+        var fixture = document.getElementById('qunit-fixture');
+        var modalEl = document.createElement('div');
+        var modalInstance = new Modal({
+            el: modalEl,
+            containerEl: modalsContainer
+        });
+        modalInstance.setup();
+        modalInstance.hide();
+        assert.equal(Module.prototype.hide.callCount, 1, 'Module.prototype.hide() was called when show() was called');
+        modalInstance.destroy();
     });
 });
