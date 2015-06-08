@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/mkay581/modal-js.svg?branch=master)](https://travis-ci.org/mkay581/modal-js)
+
 # Modal
 
 Create simple or advanced, high performant Modals with minimal javascript and markup.
