@@ -13,6 +13,7 @@
     "name": "Mark Kennedy",
     "url": "http://heyimmark.com"
   },
+  "license": "MIT",
   "main": "src/modal.js",
   "dependencies": {
     "element-kit": "^0.6.0",
