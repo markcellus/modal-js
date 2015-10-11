@@ -1,7 +1,7 @@
 var TestUtils = require('test-utils');
 var Modal = require('../src/modal');
 var assert = require('assert');
-var Module = require('module.js');
+var Module = require('module-js');
 var sinon = require('sinon');
 var Promise = require('promise');
 

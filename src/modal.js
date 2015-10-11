@@ -1,7 +1,7 @@
 'use strict';
 var ElementKit = require('element-kit');
 var utils = ElementKit.utils;
-var Module = require('module.js');
+var Module = require('module-js');
 var Promise = require('promise');
 
 /**
