@@ -1,6 +1,6 @@
 {
   "name": "modal-js",
-  "version": "1.3.2",
+  "version": "1.4.0",
   "description": "Helpful javascript modal class",
   "repository": {
     "type": "git",
@@ -16,17 +16,15 @@
   "license": "MIT",
   "main": "src/modal.js",
   "dependencies": {
-    "element-kit": "^0.6.0",
-    "jquery": "^2.1.3",
-    "module.js": "^2.2.1",
-    "promise": "^7.0.0",
-    "resource-manager-js": "^1.0.1",
+    "element-kit": "^1.0.5",
+    "module-js": "^3.0.1",
+    "promise": "^7.0.4",
+    "resource-manager": "^1.0.2",
     "underscore": "^1.8.3"
   },
   "devDependencies": {
-    "build-tools": "^1.5.2",
+    "build-tools": "^1.6.0",
     "grunt": "^0.4.5",
-    "grunt-cli": "^0.1.13",
     "sinon": "^1.14.1"
   }
 }
