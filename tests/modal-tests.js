@@ -1,4 +1,3 @@
-var TestUtils = require('test-utils');
 var Modal = require('../src/modal');
 var assert = require('assert');
 var Module = require('module-js');
@@ -7,7 +6,7 @@ var Promise = require('promise');
 
 var modalsContainer;
 
-describe('Modals', function () {
+describe('Modal', function () {
 
     before(function () {
         var fixture = document.getElementById('qunit-fixture');
@@ -191,6 +190,25 @@ describe('Modals', function () {
         modalInstance.setup();
         modalInstance.hide();
         assert.equal(Module.prototype.hide.callCount, 1, 'Module.prototype.hide() was called when show() was called');
+        modalInstance.destroy();
+    });
+
+    it('should make element passed in as initialize options available via \"el\" property', function () {
+        var fixture = document.getElementById('qunit-fixture');
+        var modalEl = document.createElement('div');
+        var modalInstance = new Modal({el: modalEl, containerEl: modalsContainer});
+        modalInstance.setup();
+        assert.deepEqual(modalInstance.el, modalEl);
+        modalInstance.destroy();
+    });
+
+    it('passing an html string as the el should make it accessible as a DOM element via el property', function () {
+        var fixture = document.getElementById('qunit-fixture');
+        var modalClass = 'my-modal';
+        var modalHtml = '<div class="' + modalClass + '"></div>';
+        var modalInstance = new Modal({el: modalHtml, containerEl: modalsContainer});
+        modalInstance.setup();
+        assert.deepEqual(modalInstance.el, modalsContainer.getElementsByClassName(modalClass)[0]);
         modalInstance.destroy();
     });
 });
