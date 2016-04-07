@@ -2,55 +2,72 @@
 <head>
     <style>
         .modals-container {
-            position: relative;
+            position: absolute;
             width: 100%;
             height: 100%;
+            left: 0;
+            top: 0;
+            visibility: hidden;
+        }
+
+        .modals-container.modal-container-active {
+            visibility: visible;
         }
 
         .modals-container div {
             background-color: grey;
             display: none; /* hide all modals that are not active by default */
-            height: 100px;
-            left: 0;
+            height: 200px;
             position: absolute;
-            top: 0;
-            width: 200px;
+            top: 10px;
+            width: 94%;
+            margin-left: 3%;
+            margin-right: 3%;
         }
 
         /* only show the modals with the active class applied. */
         .modals-container div.modal-active {
             display: block;
+            z-index: 1;
         }
     </style>
 </head>
 <body>
 
+
+<p>Interact with the modal by clicking on the button below</p>
+
+<button class="show-btn">Show Modal</button>
+
 <!-- create an empty container for all of our modals -->
 <div class="modals-container"></div>
 
-<!-- don't forget requirejs -->
-<script src="path/to/require.js"></script>
+<script src="../dist/modal.js"></script>
 
 <script>
-    require(['path/to/rogue/modal'], function (Modal) {
+    // build your modal content
+    var modalEl = document.createElement('div');
+    modalEl.innerHTML = '<p>The world\'s simplest modal is showing!</p><button class="close-btn">Close Modal</button>';
+    var closeButton = modalEl.getElementsByClassName('close-btn')[0];
+    var showButton = document.getElementsByClassName('show-btn')[0];
 
-        // build your modal content
-        var modalEl = document.createElement('div');
-        modalEl.innerHTML = '<p>The world\'s simplest modal</p>';
+    // start your modal instance
+    var modal = new Modal({
+        el: modalEl,
+        containerEl: document.getElementsByClassName('modals-container')[0],
+        activeClass: 'modal-active'
+    });
 
-        // start your modal instance
-        var modal = new Modal({
-            el: modalEl,
-            containerEl: document.getElementsByClassName('modals-container')[0],
-            activeClass: 'modal-active'
-        });
-
-        // inject the html element into the modal container in the DOM
-        modal.setup();
-
-        // show the modal
+    // when the show button is clicked, show modal.
+    showButton.addEventListener('click', function () {
         modal.show();
-    })
+    });
+
+    // when the close button is clicked, hide modal.
+    closeButton.addEventListener('click', function () {
+        modal.hide();
+    });
+
 </script>
 
 </body>

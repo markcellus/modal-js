@@ -2,14 +2,13 @@
 
 # Modal
 
-Create simple or advanced, high-performant modals with minimal javascript and markup.
+Create simple (or advanced), high-performant modals with minimal javascript and markup.
 This library is built using native vanilla javascript, so it is lightweight and super fast.
-Supports IE10+, all major browsers and even mobile.
 
 ## Benefits
 
-* Hide/show modals in any area in the DOM
-* Respond when modals are shown and hidden
+* Hide and show modals in any area in the DOM
+* Respond to events when modals are shown and hidden
 * Fully customizable modal containers and content
 * Supports multiple modals and modals inside of a modals.. weee!
 

@@ -1,15 +1,14 @@
-var Modal = require('../src/modal');
+import Modal from '../src/modal';
 var assert = require('assert');
-var Module = require('module-js');
 var sinon = require('sinon');
 var Promise = require('promise');
+import Module from 'module-js';
 
 var modalsContainer;
 
 describe('Modal', function () {
 
     before(function () {
-        var fixture = document.getElementById('qunit-fixture');
         modalsContainer = document.createElement('div');
         modalsContainer.className = 'modal-container';
     });
@@ -25,35 +24,28 @@ describe('Modal', function () {
     });
 
     it('should be added and removed from DOM correctly on setup and destroy when a modal container is passed to instantiation', function () {
-        var fixture = document.getElementById('qunit-fixture');
         var modalEl = document.createElement('div');
         var modalInstance = new Modal({
             containerEl: modalsContainer,
             el: modalEl
         });
-        assert.ok(!modalsContainer.contains(modalEl), 'upon instantiation, modal element has NOT yet been added as a child node of the modal container because setup() has not been called');
-        modalInstance.setup();
         assert.ok(modalsContainer.contains(modalEl), 'after setup() has been called, modal element has been added as a child node of the modal container');
         modalInstance.destroy();
         assert.ok(!modalsContainer.contains(modalEl), 'upon destruction, modal element has been removed as a child node of modal container');
     });
 
     it('should be added and removed from DOM correctly on setup and destroy when NO modal container is passed to instantiation', function () {
-        var fixture = document.getElementById('qunit-fixture');
         var bodyEl = document.getElementsByTagName('body')[0];
         var modalEl = document.createElement('div');
         var modalInstance = new Modal({
             el: modalEl
         });
-        assert.ok(!bodyEl.contains(modalEl), 'upon instantiation, modal element has NOT yet been added as a child node of the document body because setup() has not been called');
-        modalInstance.setup();
         assert.ok(bodyEl.contains(modalEl), 'after setup() has been called, modal element has been added as a child node of document body');
         modalInstance.destroy();
         assert.ok(!bodyEl.contains(modalEl), 'upon destruction, modal element has been removed as a child node of document body');
     });
 
     it('should add and remove appropriate classes when showing and hiding a modal', function () {
-        var fixture = document.getElementById('qunit-fixture');
         var defaultActiveClass = 'modal-active';
         var defaultContainerActiveClass = 'modal-container-active';
         var modalEl = document.createElement('div');
@@ -75,7 +67,6 @@ describe('Modal', function () {
     });
 
     it('should add and remove appropriate classes to modal container when showing and hiding a modal', function () {
-        var fixture = document.getElementById('qunit-fixture');
         var defaultActiveClass = 'modal-active';
         var defaultContainerActiveClass = 'modal-container-active';
         var modalEl = document.createElement('div');
@@ -101,7 +92,6 @@ describe('Modal', function () {
     });
 
     it('custom classes should be added and removed appropriately when showing and hiding multiple modals with custom active classes', function () {
-        var fixture = document.getElementById('qunit-fixture');
         var activeClass = 'my-custom-modal-active';
         var containerActiveClass = 'my-custom-modal-container-active';
         var firstModalEl = document.createElement('div');
@@ -137,7 +127,6 @@ describe('Modal', function () {
     });
 
     it('if modal element passed has a parent, it should be added back on destroy', function () {
-        var fixture = document.getElementById('qunit-fixture');
         var bodyEl = document.getElementsByTagName('body')[0];
         var modalElParent = document.createElement('div');
         var modalEl = document.createElement('div');
@@ -151,24 +140,7 @@ describe('Modal', function () {
         assert.ok(!bodyEl.contains(modalEl), 'modal element has been removed as a child node of document body');
     });
 
-    it('initializing should call Module.prototype.initialize() with correct options', function () {
-        var fixture = document.getElementById('qunit-fixture');
-        var modalEl = document.createElement('div');
-        sinon.stub(Module.prototype, 'initialize');
-        var activeClass = 'my-custom-active';
-        var modalInstance = new Modal({
-            el: modalEl,
-            containerEl: modalsContainer,
-            activeClass: activeClass
-        });
-        assert.equal(Module.prototype.initialize.args[0][0].activeClass, activeClass, 'activeClass was passed to Module.prototype initialize call');
-        modalInstance.destroy();
-        Module.prototype.initialize.restore();
-    });
-
-
     it('show() should call Module.prototype.show()', function () {
-        var fixture = document.getElementById('qunit-fixture');
         var modalEl = document.createElement('div');
         var modalInstance = new Modal({
             el: modalEl,
@@ -181,7 +153,6 @@ describe('Modal', function () {
     });
 
     it('show() and hide() should call Module.prototype methods', function () {
-        var fixture = document.getElementById('qunit-fixture');
         var modalEl = document.createElement('div');
         var modalInstance = new Modal({
             el: modalEl,
@@ -194,7 +165,6 @@ describe('Modal', function () {
     });
 
     it('should make element passed in as initialize options available via \"el\" property', function () {
-        var fixture = document.getElementById('qunit-fixture');
         var modalEl = document.createElement('div');
         var modalInstance = new Modal({el: modalEl, containerEl: modalsContainer});
         modalInstance.setup();
@@ -203,7 +173,6 @@ describe('Modal', function () {
     });
 
     it('passing an html string as the el should make it accessible as a DOM element via el property', function () {
-        var fixture = document.getElementById('qunit-fixture');
         var modalClass = 'my-modal';
         var modalHtml = '<div class="' + modalClass + '"></div>';
         var modalInstance = new Modal({el: modalHtml, containerEl: modalsContainer});
@@ -211,4 +180,23 @@ describe('Modal', function () {
         assert.deepEqual(modalInstance.el, modalsContainer.getElementsByClassName(modalClass)[0]);
         modalInstance.destroy();
     });
+
+    // TODO: add document click tests to ensure events get removed properly in destroy() call
+
+
+    // TODO: find a better test below that ensures that appropriate options are passed to the Modal prototype constructor
+    // it('instantiating should call Module\'s constructor with correct options', function () {
+    //     var modalEl = document.createElement('div');
+    //     var activeClass = 'my-custom-active';
+    //     var moduleConstructorStub = sinon.stub(Module.prototype, 'constructor');
+    //     var modalInstance = new Modal({
+    //         el: modalEl,
+    //         containerEl: modalsContainer,
+    //         activeClass: activeClass
+    //     });
+    //     // assert.equal(moduleConstructorStub.args[0][0].el, modalEl);
+    //     // assert.equal(moduleConstructorStub.args[0][1].activeClass, activeClass);
+    //     modalInstance.destroy();
+    //     moduleConstructorStub.restore();
+    // });
 });

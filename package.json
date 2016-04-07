@@ -1,7 +1,7 @@
 {
   "name": "modal-js",
   "version": "1.4.0",
-  "description": "Helpful javascript modal class",
+  "description": "Easily implement modals using minimal javascript. Supports Meteor, AngularJS, React, Polymer and any CSS library, e.g. Bootstrap.",
   "repository": {
     "type": "git",
     "url": "git://github.com/mkay581/modal-js.git"
@@ -13,18 +13,29 @@
     "name": "Mark Kennedy",
     "url": "http://heyimmark.com"
   },
+  "keywords": [
+    "modal",
+    "modals",
+    "modal component",
+    "modal module",
+    "react modal",
+    "angular modal",
+    "javascript modal",
+    "es6 modal"
+  ],
+  "scripts": {
+    "test": "bt test"
+  },
   "license": "MIT",
   "main": "src/modal.js",
   "dependencies": {
-    "element-kit": "^1.0.5",
-    "module-js": "^3.0.1",
-    "promise": "^7.0.4",
-    "resource-manager": "^1.0.2",
-    "underscore": "^1.8.3"
+    "lodash": "^4.8.2",
+    "module-js": "^5.2.0"
   },
   "devDependencies": {
-    "build-tools": "^1.6.0",
-    "grunt": "^0.4.5",
-    "sinon": "^1.14.1"
+    "babel-polyfill": "^6.7.4",
+    "build-tools": "^3.0.2",
+    "promise": "^7.1.1",
+    "sinon": "^1.17.3"
   }
 }
