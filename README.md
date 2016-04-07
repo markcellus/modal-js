@@ -17,7 +17,7 @@ This library is built using native vanilla javascript, so it is lightweight and 
 Create one or more modals with a few lines of javascript. With your html and css setup correctly, you can do:
 
 ```javascript
-var modal = new Modal({
+let modal = new Modal({
     el: '<div class="my-modal">My Modal Content</div>',
     containerEl: document.getElementById('modals-container'),
     activeClass: 'modal-active'
