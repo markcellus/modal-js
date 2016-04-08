@@ -1,4 +1,6 @@
 [![Build Status](https://travis-ci.org/mkay581/modal-js.svg?branch=master)](https://travis-ci.org/mkay581/modal-js)
+[![npm version](https://badge.fury.io/js/modal-js.svg)](https://badge.fury.io/js/modal-js)
+[![Bower version](https://badge.fury.io/bo/modal-module.svg)](https://badge.fury.io/bo/modal-module)
 
 # Modal
 
