@@ -1,6 +1,6 @@
 {
   "name": "modal-js",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Easily implement modals using minimal javascript. Supports Meteor, AngularJS, React, Polymer and any CSS library, e.g. Bootstrap.",
   "repository": {
     "type": "git",

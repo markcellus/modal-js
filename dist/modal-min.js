@@ -1,5 +1,5 @@
 /** 
-* modal-js - v2.0.0.
+* modal-js - v2.0.1.
 * git://github.com/mkay581/modal-js.git
 * Copyright 2016 Mark Kennedy. Licensed MIT.
 */
