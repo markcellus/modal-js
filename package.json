@@ -30,7 +30,7 @@
   "main": "src/modal.js",
   "dependencies": {
     "lodash": "^4.8.2",
-    "module-js": "^5.8.0"
+    "module-js": "^5.9.2"
   },
   "browserify": {
     "transform": [

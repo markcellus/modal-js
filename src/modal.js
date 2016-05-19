@@ -37,13 +37,15 @@ class Modal extends Module {
 
     /**
      * Sets up the modal.
+     * @param {HTMLElement|HTMLTemplateElement|String} el - The content to be used as the modal template
      * @param {object} options - The options
      */
-    constructor (options) {
+    constructor (el, options) {
 
+        let originalParent = el.parentNode;
+        
         options = _.extend({
             containerEl: document.getElementsByTagName('body')[0],
-            el: null,
             onHide: null,
             onShow: null,
             onClickOutside: null,
@@ -51,69 +53,60 @@ class Modal extends Module {
             containerActiveClass: 'modal-container-active'
         }, options);
 
-        options.el = setupEl(options.el);
-
-        super(options.el, options);
-
+        el = setupEl(el);
+        
+        super(el, options);
         options.onClickOutside = options.onClickOutside || this.hide.bind(this);
-
-        this.el = options.el;
         this.options = options;
-        this.container = options.containerEl;
-
-        this._origModalElParent = this.el.parentNode || document.createDocumentFragment();
-
-        if (!this.container.contains(this.el)) {
-            this.container.appendChild(this.el);
+        this._origModalElParent = originalParent;
+        if (!this.options.containerEl.contains(this.el)) {
+            this.options.containerEl.appendChild(this.el);
         }
 
     }
 
     /**
      * Sets stuff up.
-     * @memberOf Modal
+     * @deprecated since 2.1.0
      */
     setup () {}
 
     /**
      * Shows the modal.
-     * @memberOf Modal
+     * @returns {Promise}
      */
     show () {
-        this.setup();
-        this.el.classList.add(this.options.activeClass);
-        this.container.classList.add(this.options.containerActiveClass);
+        this.options.containerEl.classList.add(this.options.containerActiveClass);
         this._onDocClickEventListener = this._onDocClick.bind(this);
         document.addEventListener('click', this._onDocClickEventListener, true);
-        if (this.options.onShow) {
-            this.options.onShow();
-        }
-        return super.show();
+        return super.show().then(() => {
+            if (this.options.onShow) {
+                this.options.onShow();
+            }
+        });
     }
 
     /**
      * Hides the modal.
-     * @memberOf Modal
+     * @returns {Promise}
      */
     hide () {
-        this.el.classList.remove(this.options.activeClass);
         document.removeEventListener('click', this._onDocClick.bind(this), true);
-
-        if (this.options.onHide) {
-            this.options.onHide();
-        }
         return super.hide().then(() => {
             // do not remove container's active class if other active modals exist
-            if (!this.container.getElementsByClassName(this.options.activeClass).length) {
-                this.container.classList.remove(this.options.containerActiveClass);
+            if (!this.options.containerEl.getElementsByClassName(this.options.activeClass).length) {
+                this.options.containerEl.classList.remove(this.options.containerActiveClass);
+            }
+            if (this.options.onHide) {
+                this.options.onHide();
             }
         });
     }
 
     /**
      * Whether the modal is showing.
+     * @deprecated since 2.1.0
      * @returns {boolean} Returns truthy if showing, falsy if not
-     * @memberOf Modal
      */
     isActive () {
         return this.active;
@@ -122,13 +115,12 @@ class Modal extends Module {
     /**
      * When the document window is clicked.
      * @param {Event} e - The event
-     * @memberOf Modal
      * @private
      */
     _onDocClick (e) {
         var clickedItem = e.target,
             isClickOutside = !this.el.contains(clickedItem);
-        if (isClickOutside && this.isActive()) {
+        if (isClickOutside && this.active) {
             if (this.options.onClickOutside) {
                 this.options.onClickOutside();
             }
@@ -137,15 +129,15 @@ class Modal extends Module {
 
     /**
      * Destroys the modal.
-     * @memberOf Modal
      */
     destroy () {
-        this.el.classList.remove(this.options.activeClass);
-        if (this.container.contains(this.el)) {
+        if (this._origModalElParent) {
             this._origModalElParent.appendChild(this.el);
+        } else if (this.options.containerEl.contains(this.el)) {
+            this.options.containerEl.removeChild(this.el);
         }
-        if (!this.container.getElementsByClassName(this.options.activeClass).length) {
-            this.container.classList.remove(this.options.containerActiveClass);
+        if (!this.options.containerEl.getElementsByClassName(this.options.activeClass).length) {
+            this.options.containerEl.classList.remove(this.options.containerActiveClass);
         }
         document.removeEventListener('click', this._onDocClickEventListener, true);
         super.destroy();
@@ -153,4 +145,4 @@ class Modal extends Module {
 
 }
 
-module.exports = Modal;
+export default Modal;

@@ -16,18 +16,19 @@
 
         .modals-container div {
             background-color: grey;
-            display: none; /* hide all modals that are not active by default */
             height: 200px;
             position: absolute;
             top: 10px;
             width: 94%;
             margin-left: 3%;
             margin-right: 3%;
+            opacity: 0; /* hide all modals that are not active by default */
+            transition: opacity 300ms;
         }
 
         /* only show the modals with the active class applied. */
         .modals-container div.modal-active {
-            display: block;
+            opacity: 1;
             z-index: 1;
         }
     </style>
@@ -52,8 +53,7 @@
     var showButton = document.getElementsByClassName('show-btn')[0];
 
     // start your modal instance
-    var modal = new Modal({
-        el: modalEl,
+    var modal = new Modal.default(modalEl, {
         containerEl: document.getElementsByClassName('modals-container')[0],
         activeClass: 'modal-active'
     });

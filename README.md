@@ -11,6 +11,7 @@ This library is built using native vanilla javascript, so it is lightweight and 
 
 * Hide and show modals in any area in the DOM
 * Respond to events when modals are shown and hidden
+* Respects CSS transitions and delays
 * Fully customizable modal containers and content
 * Supports multiple modals and modals inside of a modals.. weee!
 
@@ -19,13 +20,12 @@ This library is built using native vanilla javascript, so it is lightweight and 
 Create one or more modals with a few lines of javascript. With your html and css setup correctly, you can do:
 
 ```javascript
-let modal = new Modal({
-    el: '<div class="my-modal">My Modal Content</div>',
+let html = '<div class="my-modal">My Modal Content</div>';
+let modal = new Modal(html, {
     containerEl: document.getElementById('modals-container'),
     activeClass: 'modal-active'
 });
 
-modal.setup(); // inject the modal's html into the modal container
 modal.show(); // show the modal
 modal.hide(); // hide the modal
 ```
