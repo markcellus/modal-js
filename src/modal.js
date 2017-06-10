@@ -1,6 +1,4 @@
-'use strict';
 import Module from 'module-js';
-import _ from 'lodash';
 
 /**
  * Builds the modal element and its content
@@ -10,7 +8,7 @@ import _ from 'lodash';
 let setupEl = function (content) {
     if (typeof content === 'string') {
         // html!
-        var tempParentEl,
+        let tempParentEl,
             el;
         content = content.trim(content);
         tempParentEl = document.createElement('div');
@@ -33,7 +31,7 @@ let setupEl = function (content) {
  * @param {string} [options.activeClass] - The CSS class that gets added to each modal when shown
  * @param {string} [options.containerActiveClass] - The CSS class that gets added to the modal container when there is at least one modal showing
  */
-class Modal extends Module {
+export default class Modal extends Module {
 
     /**
      * Sets up the modal.
@@ -44,7 +42,7 @@ class Modal extends Module {
 
         let originalParent = el.parentNode;
         
-        options = _.extend({
+        options = Object.assign({
             containerEl: document.getElementsByTagName('body')[0],
             onHide: null,
             onShow: null,
@@ -54,7 +52,7 @@ class Modal extends Module {
         }, options);
 
         el = setupEl(el);
-        
+
         super(el, options);
         options.onClickOutside = options.onClickOutside || this.hide.bind(this);
         this.options = options;
@@ -118,7 +116,7 @@ class Modal extends Module {
      * @private
      */
     _onDocClick (e) {
-        var clickedItem = e.target,
+        let clickedItem = e.target,
             isClickOutside = !this.el.contains(clickedItem);
         if (isClickOutside && this.active) {
             if (this.options.onClickOutside) {
@@ -144,5 +142,3 @@ class Modal extends Module {
     }
 
 }
-
-export default Modal;
